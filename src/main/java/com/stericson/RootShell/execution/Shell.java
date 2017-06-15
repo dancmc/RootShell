@@ -727,20 +727,13 @@ public class Shell {
                                  *
                                  */
                                 int iterations = 0;
-                                while (command.totalOutput > command.totalOutputProcessed) {
-
-                                    if(iterations == 0)
-                                    {
-                                        iterations++;
-                                        RootShell.log("Waiting for output to be processed. " + command.totalOutputProcessed + " Of " + command.totalOutput);
-                                    }
-
+                                synchronized (command.syncOb) {
                                     try {
 
-                                        synchronized (this)
-                                        {
-                                            this.wait(2000);
-                                        }
+
+
+                                            this.wait();
+
                                     } catch (Exception e) {
                                         RootShell.log(e.getMessage());
                                     }

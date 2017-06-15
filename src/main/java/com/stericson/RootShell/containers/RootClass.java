@@ -27,7 +27,7 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
     }
     */
 
-    static String PATH_TO_DX = "/Users/Chris/Projects/android-sdk-macosx/build-tools/18.0.1/dx";
+    static String PATH_TO_DX = "/Applications/android-sdk-macosx/build-tools/25.0.2/dx";
 
     enum READ_STATE {
         STARTING, FOUND_ANNOTATION;
@@ -148,7 +148,11 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                 } catch (InterruptedException e) {
                 }
 
-                File rawFolder = new File("res" + File.separator + "raw");
+                String strRawFolder = "res" + File.separator + "raw";
+                if (builtPath.toString().startsWith("build")); //Check if running in AndroidStudio
+                strRawFolder = "src" + File.separator + "main" + File.separator + "res" + File.separator + "raw";
+
+                File rawFolder = new File(strRawFolder);
                 if (!rawFolder.exists()) {
                     rawFolder.mkdirs();
                 }
@@ -157,14 +161,14 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                 if (onWindows) {
                     cmd = new String[]{
                             "cmd", "/C",
-                            "dx --dex --output=res" + File.separator + "raw" + File.separator + "anbuild.dex "
+                            "dx --dex --output=" + strRawFolder + File.separator + "anbuild.dex "
                                     + builtPath + File.separator + "anbuild.jar"
                     };
                 } else {
                     cmd = new String[]{
                             getPathToDx(),
                             "--dex",
-                            "--output=res" + File.separator + "raw" + File.separator + "anbuild.dex",
+                            "--output=" + strRawFolder + File.separator + "anbuild.dex",
                             builtPath + File.separator + "anbuild.jar"
                     };
                 }
@@ -175,12 +179,18 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                 } catch (InterruptedException e) {
                 }
             }
-            System.out.println("All done. ::: anbuild.dex should now be in your project's res" + File.separator + "raw" + File.separator + " folder :::");
+            System.out.println("All done. ::: anbuild.dex should now be in your project's src" + File.separator + "main" + File.separator + "res" + File.separator + "raw" + File.separator + " folder :::");
         }
 
         protected void lookup(File path, List<File> fileList) {
-            String desourcedPath = path.toString().replace("src" + File.separator, "");
-            File[] files = path.listFiles();
+            String desourcedPath = path.toString().replace("src" + File.separator, "").replace("main" + File.separator + "java" + File.separator, "");
+
+            File[] files = path.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return true;
+                }
+            });
             for (File file : files) {
                 if (file.isDirectory()) {
                     if (-1 == file.getAbsolutePath().indexOf(AVOIDDIRPATH)) {
@@ -242,48 +252,57 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
         }
 
         protected String getPathToDx() throws IOException {
-            String androidHome = System.getenv("ANDROID_HOME");
-            if (null == androidHome) {
-                throw new IOException("Error: you need to set $ANDROID_HOME globally");
-            }
             String dxPath = null;
-            File[] files = new File(androidHome + File.separator + "build-tools").listFiles();
-            int recentSdkVersion = 0;
-            for (File file : files) {
+            try {
+                String androidHome = System.getenv("ANDROID_HOME");
+                if (null == androidHome) {
+                    throw new IOException("Error: you need to set $ANDROID_HOME globally");
+                }
 
-                String fileName = null;
-                if (file.getName().contains("-")) {
-                    String[] splitFileName = file.getName().split("-");
-                    if (splitFileName[1].contains("W")) {
-                        char[] fileNameChars = splitFileName[1].toCharArray();
-                        fileName = String.valueOf(fileNameChars[0]);
+                File[] files = new File(androidHome + File.separator + "build-tools").listFiles();
+                int recentSdkVersion = 0;
+                for (File file : files) {
+
+                    String fileName = null;
+                    if (file.getName().contains("-")) {
+                        String[] splitFileName = file.getName().split("-");
+                        if (splitFileName[1].contains("W")) {
+                            char[] fileNameChars = splitFileName[1].toCharArray();
+                            fileName = String.valueOf(fileNameChars[0]);
+                        } else if (splitFileName[1].contains("rc")) {
+                            continue; //Do not use release candidates
+                        } else {
+                            fileName = splitFileName[1];
+                        }
                     } else {
-                        fileName = splitFileName[1];
+                        fileName = file.getName();
                     }
-                } else {
-                    fileName = file.getName();
-                }
 
-                int sdkVersion;
+                    int sdkVersion;
 
-                String[] sdkVersionBits = fileName.split("[.]");
-                sdkVersion = Integer.parseInt(sdkVersionBits[0]) * 10000;
-                if (sdkVersionBits.length > 1) {
-                    sdkVersion += Integer.parseInt(sdkVersionBits[1]) * 100;
-                    if (sdkVersionBits.length > 2) {
-                        sdkVersion += Integer.parseInt(sdkVersionBits[2]);
+                    String[] sdkVersionBits = fileName.split("[.]");
+                    sdkVersion = Integer.parseInt(sdkVersionBits[0]) * 10000;
+                    if (sdkVersionBits.length > 1) {
+                        sdkVersion += Integer.parseInt(sdkVersionBits[1]) * 100;
+                        if (sdkVersionBits.length > 2) {
+                            sdkVersion += Integer.parseInt(sdkVersionBits[2]);
+                        }
+                    }
+                    if (sdkVersion > recentSdkVersion) {
+                        String tentativePath = file.getAbsolutePath() + File.separator + "dx";
+                        if (new File(tentativePath).exists()) {
+                            recentSdkVersion = sdkVersion;
+                            dxPath = tentativePath;
+                        }
                     }
                 }
-                if (sdkVersion > recentSdkVersion) {
-                    String tentativePath = file.getAbsolutePath() + File.separator + "dx";
-                    if (new File(tentativePath).exists()) {
-                        recentSdkVersion = sdkVersion;
-                        dxPath = tentativePath;
-                    }
+            }catch(Exception e){
+                if (e instanceof IOException){
+                    throw e;
                 }
             }
             if (dxPath == null) {
-                throw new IOException("Error: unable to find dx binary in $ANDROID_HOME");
+                return PATH_TO_DX;
             }
             return dxPath;
         }
@@ -309,7 +328,12 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                     foundPath = eclipsePath;
                 }
             }
-
+            if (null == foundPath) {
+                File androidStudioPath = new File("build" + File.separator + "intermediates" + File.separator + "classes" + File.separator + "debug"); // Android Studio
+                if (androidStudioPath.isDirectory()) {
+                    foundPath = androidStudioPath;
+                }
+            }
             return foundPath;
         }
 
