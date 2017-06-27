@@ -728,14 +728,13 @@ public class Shell {
                                  */
                                 int iterations = 0;
                                 synchronized (command.syncOb) {
-                                    try {
+                                    while(command.totalOutputProcessed!=command.totalOutput) {
+                                        try {
+                                            command.syncOb.wait();
 
-
-
-                                            this.wait();
-
-                                    } catch (Exception e) {
-                                        RootShell.log(e.getMessage());
+                                        } catch (Exception e) {
+                                            RootShell.log(e.getMessage());
+                                        }
                                     }
                                 }
 

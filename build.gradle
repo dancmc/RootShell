@@ -9,7 +9,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0-alpha3'
+        classpath 'com.android.tools.build:gradle:3.0.0-alpha4'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
     }
 }
@@ -36,8 +36,6 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
     }
     buildTypes {
         release {
@@ -48,7 +46,7 @@ android {
 }
 
 group = 'io.dancmc.utils'
-version = '0.0.4'
+version = '0.0.5'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
