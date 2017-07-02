@@ -169,7 +169,7 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                             PATH_TO_DX,
                             "--dex",
                             "--output=" + strRawFolder + File.separator + "anbuild.dex",
-                            builtPath + File.separator + "anbuild.jar"
+                            "." + File.separator + "anbuild.jar"
 
                     };
                 }
