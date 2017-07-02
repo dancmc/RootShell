@@ -5,6 +5,7 @@ buildscript {
 
     repositories {
         maven { url 'http://repo1.maven.org/maven2' }
+        maven { url "https://maven.google.com" }
         mavenLocal()
     }
 
@@ -46,7 +47,7 @@ android {
 }
 
 group = 'io.dancmc.utils'
-version = '0.0.5'
+version = '0.0.8'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -54,17 +55,29 @@ dependencies {
 }
 repositories {
     mavenCentral()
+    maven { url "https://maven.google.com" }
 }
 
+
+
+
+
 task deleteJar(type: Delete) {
-    delete 'libs/logmanagementlib.jar'
+    delete 'libs/RootShell.jar'
 }
 
 task createJar(type: Copy) {
     from('build/intermediates/bundles/release/')
     into('libs/jars/')
     include('classes.jar')
-    rename('classes.jar', 'logmanagementlib.jar')
+    rename('classes.jar', 'RootShell.jar')
 }
 
-createJar.dependsOn(deleteJar, build)
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'com.stericson.RootShell.containers.RootClass'
+    }
+//    baseName = project.name + '-all'
+    from 'build/intermediates/classes/debug/'
+    archiveName 'RootShell.jar'
+}

@@ -1,5 +1,6 @@
 package com.stericson.RootShell.containers;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -59,6 +60,7 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
     public class RootArgs {
 
         public String args[];
+
     }
 
     static void displayError(Exception e) {
@@ -85,31 +87,17 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
             File builtPath = getBuiltPath();
             if (null != builtPath) {
                 // Android! Y U no have com.google.common.base.Joiner class?
-                String rc1 = "com" + File.separator
+                String prefix = "com" + File.separator
                         + "stericson" + File.separator
                         + "RootShell" + File.separator
-                        + "containers" + File.separator
-                        + "RootClass.class";
-                String rc2 = "com" + File.separator
-                        + "stericson" + File.separator
-                        + "RootShell" + File.separator
-                        + "containers" + File.separator
-                        + "RootClass$RootArgs.class";
-                String rc3 = "com" + File.separator
-                        + "stericson" + File.separator
-                        + "RootShell" + File.separator
-                        + "containers" + File.separator
-                        + "RootClass$AnnotationsFinder.class";
-                String rc4 = "com" + File.separator
-                        + "stericson" + File.separator
-                        + "RootShell" + File.separator
-                        + "containers" + File.separator
-                        + "RootClass$AnnotationsFinder$1.class";
-                String rc5 = "com" + File.separator
-                        + "stericson" + File.separator
-                        + "RootShell" + File.separator
-                        + "containers" + File.separator
-                        + "RootClass$AnnotationsFinder$2.class";
+                        + "containers" + File.separator;
+
+                String rc1 = prefix + "RootClass.class";
+                String rc2 = prefix + "RootClass$RootArgs.class";
+                String rc3 = prefix + "RootClass$AnnotationsFinder.class";
+                String rc4 = prefix + "RootClass$AnnotationsFinder$1.class";
+                String rc5 = prefix + "RootClass$AnnotationsFinder$2.class";
+
                 String[] cmd;
                 boolean onWindows = (-1 != System.getProperty("os.name").toLowerCase().indexOf("win"));
                 if (onWindows) {
@@ -130,27 +118,39 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                     al.add("jar");
                     al.add("cf");
                     al.add("anbuild.jar");
-                    al.add(rc1);
-                    al.add(rc2);
-                    al.add(rc3);
-                    al.add(rc4);
-                    al.add(rc5);
+
+                    // these are the desourced paths of all the classes to jar
+                    // these need to match the class package names exactly for dex to work
+                    // therefore in jar command, use -C to change directories while JARing
+
+                    // since I deleted all the extra class files, can use . and ignore explicit rc1-5
+                    al.add("-C");
+                    al.add("rootclass");
+                    al.add(".");
                     for (File file : classFiles) {
+                        // but have to manually change dir for every rootcandidate file found
+                        al.add("-C");
+                        al.add(builtPath.toString());
                         al.add(file.getPath());
                     }
                     cmd = al.toArray(new String[al.size()]);
                 }
+
+                StringBuilder cmdPrint = new StringBuilder();
+                for(String c : cmd){
+                    cmdPrint.append(c);
+                    cmdPrint.append(" ");
+                }
+                System.out.println(cmdPrint.toString());
                 ProcessBuilder jarBuilder = new ProcessBuilder(cmd);
-                jarBuilder.directory(builtPath);
+                jarBuilder.directory(new File("."));
                 try {
                     jarBuilder.start().waitFor();
                 } catch (IOException e) {
                 } catch (InterruptedException e) {
                 }
 
-                String strRawFolder = "res" + File.separator + "raw";
-                if (builtPath.toString().startsWith("build")); //Check if running in AndroidStudio
-                strRawFolder = "src" + File.separator + "main" + File.separator + "res" + File.separator + "raw";
+                String strRawFolder = "src" + File.separator + "main" + File.separator + "res" + File.separator + "raw";
 
                 File rawFolder = new File(strRawFolder);
                 if (!rawFolder.exists()) {
@@ -166,10 +166,11 @@ public class RootClass /* #ANNOTATIONS extends AbstractProcessor */ {
                     };
                 } else {
                     cmd = new String[]{
-                            getPathToDx(),
+                            PATH_TO_DX,
                             "--dex",
                             "--output=" + strRawFolder + File.separator + "anbuild.dex",
                             builtPath + File.separator + "anbuild.jar"
+
                     };
                 }
                 ProcessBuilder dexBuilder = new ProcessBuilder(cmd);

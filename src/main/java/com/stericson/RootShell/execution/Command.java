@@ -197,7 +197,7 @@ public class Command {
                     sb.append(
                             "dalvikvm -cp " + filePath + "/anbuild.dex"
                                     + " com.android.internal.util.WithFramework"
-                                    + " com.stericson.RootTools.containers.RootClass "
+                                    + " com.stericson.RootShell.containers.RootClass "
                                     + command[i]);
                 }
 
