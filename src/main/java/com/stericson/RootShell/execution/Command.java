@@ -192,6 +192,7 @@ public class Command {
                     sb.append(
                             "export CLASSPATH=" + filePath + "/anbuild.dex;"
                                     + " app_process /system/bin "
+                                    + " com.stericson.RootShell.containers.RootClass "
                                     + command[i]);
                 } else {
                     sb.append(
